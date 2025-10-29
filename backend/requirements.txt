@@ -1,0 +1,18 @@
+# Core dependencies
+resend==2.6.0
+supabase==2.11.2
+pydantic==2.10.6
+
+# Async support
+asyncio
+aiohttp==3.11.11
+
+# Testing
+pytest==8.3.4
+pytest-asyncio==0.25.2
+pytest-cov==6.0.0
+pytest-mock==3.14.0
+
+# Development
+python-dotenv==1.0.1
+structlog==24.4.0
