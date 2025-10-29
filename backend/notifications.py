@@ -28,6 +28,7 @@ from pathlib import Path
 import resend
 from supabase import create_client, Client
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+from rate_limiter import notification_rate_limiter, RateLimitExceeded
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -372,6 +373,13 @@ class NotificationSystem:
         if not should_send:
             return {"success": False, "reason": "user_preferences_or_unverified_email"}
 
+        # Check rate limit
+        try:
+            await notification_rate_limiter.check_rate_limit(user_id)
+        except RateLimitExceeded as e:
+            logger.warning(f"Rate limit exceeded for user {user_id}: {e}")
+            return {"success": False, "reason": "rate_limit_exceeded", "error": str(e)}
+
         # Handle CSV attachment or storage link
         attachments = None
         download_section = ""
@@ -452,6 +460,13 @@ class NotificationSystem:
         if not should_send:
             return {"success": False, "reason": "user_preferences_or_unverified_email"}
 
+        # Check rate limit
+        try:
+            await notification_rate_limiter.check_rate_limit(user_id)
+        except RateLimitExceeded as e:
+            logger.warning(f"Rate limit exceeded for user {user_id}: {e}")
+            return {"success": False, "reason": "rate_limit_exceeded", "error": str(e)}
+
         # Render email HTML using template
         html = self._render_template(
             "job_failed.html",
@@ -494,6 +509,13 @@ class NotificationSystem:
 
         if not should_send:
             return {"success": False, "reason": "user_preferences_or_unverified_email"}
+
+        # Check rate limit
+        try:
+            await notification_rate_limiter.check_rate_limit(user_id)
+        except RateLimitExceeded as e:
+            logger.warning(f"Rate limit exceeded for user {user_id}: {e}")
+            return {"success": False, "reason": "rate_limit_exceeded", "error": str(e)}
 
         percent = (current_usage / limit) * 100
         remaining = limit - current_usage
