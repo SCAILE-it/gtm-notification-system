@@ -23,9 +23,11 @@ import base64
 import logging
 from datetime import datetime, timedelta
 from enum import Enum
+from pathlib import Path
 
 import resend
 from supabase import create_client, Client
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -134,6 +136,13 @@ class NotificationSystem:
         resend.api_key = resend_api_key
         self.supabase: Client = create_client(supabase_url, supabase_key)
 
+        # Initialize Jinja2 template environment
+        template_dir = Path(__file__).parent / "templates"
+        self.jinja_env = Environment(
+            loader=FileSystemLoader(template_dir),
+            autoescape=select_autoescape(['html', 'xml'])
+        )
+
         logger.info(f"NotificationSystem initialized with from_email={from_email}")
 
     async def _check_user_preferences(
@@ -187,6 +196,34 @@ class NotificationSystem:
             logger.error(f"Error checking preferences for user {user_id}: {e}")
             # Default to NOT sending if we can't verify preferences
             return False, None
+
+    def _render_template(self, template_name: str, **context) -> str:
+        """
+        Render email template with design system tokens and context.
+
+        Args:
+            template_name: Name of template file (e.g., 'job_complete.html')
+            **context: Template variables
+
+        Returns:
+            Rendered HTML string
+        """
+        # Merge design system tokens with context
+        template_context = {
+            **EMAIL_DESIGN["colors"],
+            "colors": EMAIL_DESIGN["colors"],
+            "font_family": EMAIL_DESIGN["typography"]["font_family"],
+            "heading_size": EMAIL_DESIGN["typography"]["heading_size"],
+            "body_size": EMAIL_DESIGN["typography"]["body_size"],
+            "small_size": EMAIL_DESIGN["typography"]["small_size"],
+            "stat_value_size": EMAIL_DESIGN["typography"]["stat_value_size"],
+            "radius": EMAIL_DESIGN["radius"]["button"],
+            "app_url": self.app_url,
+            **context
+        }
+
+        template = self.jinja_env.get_template(template_name)
+        return template.render(template_context)
 
     async def _upload_to_storage(
         self,
@@ -367,79 +404,16 @@ class NotificationSystem:
                     logger.error(f"Failed to upload CSV to storage: {e}")
                     download_section = f'<p style="color: {EMAIL_DESIGN["colors"]["error"]};">Error generating download link. Please check the app.</p>'
 
-        # Build email HTML with SCAILE design tokens
-        c = EMAIL_DESIGN["colors"]
-        t = EMAIL_DESIGN["typography"]
-
-        html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                body {{ font-family: {t['font_family']}; line-height: 1.6; margin: 0; padding: 0; background-color: {c['background']}; }}
-                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; background: {c['card']}; }}
-                .header {{ background: {c['success']}; color: white; padding: 30px 20px; border-radius: 8px; text-align: center; }}
-                .stats {{ background: {c['stats_bg']}; padding: 20px; border-radius: 8px; margin: 20px 0; }}
-                .stats-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }}
-                .stat-item {{ text-align: center; }}
-                .stat-value {{ font-size: {t['stat_value_size']}; font-weight: bold; margin: 5px 0; color: {c['foreground']}; }}
-                .stat-label {{ color: {c['muted']}; font-size: {t['small_size']}; }}
-                .success {{ color: {c['success']}; }}
-                .failed {{ color: {c['error']}; }}
-                .footer {{ margin-top: 30px; padding-top: 20px; border-top: 1px solid {c['border']}; color: {c['muted']}; font-size: {t['small_size']}; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1 style="margin: 0; font-size: {t['heading_size']};">✅ Job Complete!</h1>
-                </div>
-
-                <div class="stats">
-                    <h2 style="margin-top: 0;">Results Summary</h2>
-                    <div class="stats-grid">
-                        <div class="stat-item">
-                            <div class="stat-value">{results['total_rows']:,}</div>
-                            <div class="stat-label">Total Rows</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value success">{results['successful']:,}</div>
-                            <div class="stat-label">Successful</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value failed">{results['failed']:,}</div>
-                            <div class="stat-label">Failed</div>
-                        </div>
-                        <div class="stat-item">
-                            <div class="stat-value">{results['processing_time_seconds']:.1f}s</div>
-                            <div class="stat-label">Processing Time</div>
-                        </div>
-                    </div>
-                </div>
-
-                {download_section}
-
-                <p style="margin: 20px 0;">
-                    <a href="{self.app_url}/output?job={job_id}"
-                       style="background: {c['primary']}; color: white; padding: 12px 24px;
-                              text-decoration: none; border-radius: {EMAIL_DESIGN['radius']['button']}; display: inline-block;">
-                        View in App →
-                    </a>
-                </p>
-
-                <div class="footer">
-                    <p>
-                        Manage your notification preferences:
-                        <a href="{self.app_url}/profile/notifications" style="color: {c['primary']};">Settings</a>
-                    </p>
-                    <p style="margin-top: 10px; font-size: 12px;">SCAILE - GTM Intelligence Copilot</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
+        # Render email HTML using template
+        html = self._render_template(
+            "job_complete.html",
+            total_rows=results['total_rows'],
+            successful=results['successful'],
+            failed=results['failed'],
+            processing_time_seconds=results['processing_time_seconds'],
+            download_section=download_section,
+            job_id=job_id
+        )
 
         subject = f"✅ Job Complete: {results['successful']:,}/{results['total_rows']:,} rows processed"
 
@@ -478,53 +452,12 @@ class NotificationSystem:
         if not should_send:
             return {"success": False, "reason": "user_preferences_or_unverified_email"}
 
-        # Use SCAILE design tokens
-        c = EMAIL_DESIGN["colors"]
-        t = EMAIL_DESIGN["typography"]
-
-        html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                body {{ font-family: {t['font_family']}; margin: 0; padding: 20px; background-color: {c['background']}; }}
-                .container {{ max-width: 600px; margin: 0 auto; background: {c['card']}; padding: 20px; border-radius: 8px; }}
-                .header {{ background: {c['error']}; color: white; padding: 30px 20px; border-radius: 8px; text-align: center; }}
-                .error-box {{ background: {c['error_bg']}; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid {c['error']}; }}
-                code {{ background: {c['stats_bg']}; padding: 2px 6px; border-radius: 4px; font-family: {t['font_family']}; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1 style="margin: 0; font-size: {t['heading_size']};">❌ Job Failed</h1>
-                </div>
-
-                <div class="error-box">
-                    <h3 style="margin-top: 0; color: {c['error_hover']};">Error Details:</h3>
-                    <p><code>{error_message}</code></p>
-                </div>
-
-                <p>Your job encountered an error and could not complete. Please check the error details above and try again.</p>
-
-                <p style="margin: 20px 0;">
-                    <a href="{self.app_url}/output?job={job_id}"
-                       style="background: {c['error']}; color: white; padding: 12px 24px;
-                              text-decoration: none; border-radius: {EMAIL_DESIGN['radius']['button']}; display: inline-block;">
-                        View Details →
-                    </a>
-                </p>
-
-                <hr style="border: none; border-top: 1px solid {c['border']}; margin: 30px 0;">
-                <p style="color: {c['muted']}; font-size: {t['small_size']};">
-                    Need help? Reply to this email or visit our <a href="{self.app_url}/docs" style="color: {c['primary']};">documentation</a>.
-                </p>
-                <p style="margin-top: 10px; font-size: 12px; color: {c['muted']};">SCAILE - GTM Intelligence Copilot</p>
-            </div>
-        </body>
-        </html>
-        """
+        # Render email HTML using template
+        html = self._render_template(
+            "job_failed.html",
+            error_message=error_message,
+            job_id=job_id
+        )
 
         subject = f"❌ Job Failed: {job_id[:8]}"
 
@@ -565,59 +498,14 @@ class NotificationSystem:
         percent = (current_usage / limit) * 100
         remaining = limit - current_usage
 
-        # Use SCAILE design tokens
-        c = EMAIL_DESIGN["colors"]
-        t = EMAIL_DESIGN["typography"]
-        r = EMAIL_DESIGN["radius"]
-
-        html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <style>
-                body {{ font-family: {t['font_family']}; margin: 0; padding: 20px; background-color: {c['background']}; }}
-                .container {{ max-width: 600px; margin: 0 auto; background: {c['card']}; padding: 20px; border-radius: 8px; }}
-                .header {{ background: {c['warning']}; color: white; padding: 30px 20px; border-radius: 8px; text-align: center; }}
-                .progress-bar {{ background: {c['border']}; height: 30px; border-radius: 15px; overflow: hidden; margin: 20px 0; }}
-                .progress-fill {{ background: {c['warning']}; height: 100%; width: {percent}%; transition: width 0.3s; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <h1 style="margin: 0; font-size: {t['heading_size']};">⚠️ Quota Warning</h1>
-                </div>
-
-                <p style="font-size: {t['body_size']};">You've used <strong>{current_usage:,}</strong> of your <strong>{limit:,}</strong> monthly API calls.</p>
-
-                <div class="progress-bar">
-                    <div class="progress-fill" style="display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: {t['body_size']};">
-                        {percent:.0f}%
-                    </div>
-                </div>
-
-                <p style="font-size: {t['body_size']};">You have <strong>{remaining:,} calls remaining</strong> this month.</p>
-
-                <p style="margin: 30px 0;">
-                    <a href="{self.app_url}/profile/usage"
-                       style="background: {c['primary']}; color: white; padding: 12px 24px;
-                              text-decoration: none; border-radius: {r['button']}; display: inline-block; margin-right: 10px;">
-                        View Usage
-                    </a>
-                    <a href="{self.app_url}/profile/billing"
-                       style="background: {c['success']}; color: white; padding: 12px 24px;
-                              text-decoration: none; border-radius: {r['button']}; display: inline-block;">
-                        Upgrade Plan
-                    </a>
-                </p>
-
-                <hr style="border: none; border-top: 1px solid {c['border']}; margin: 30px 0;">
-                <p style="color: {c['muted']}; font-size: {t['small_size']}; text-align: center;">SCAILE - GTM Intelligence Copilot</p>
-            </div>
-        </body>
-        </html>
-        """
+        # Render email HTML using template
+        html = self._render_template(
+            "quota_warning.html",
+            current_usage=current_usage,
+            limit=limit,
+            percent=percent,
+            remaining=remaining
+        )
 
         subject = f"⚠️ Quota Warning: {percent:.0f}% used ({remaining:,} calls remaining)"
 

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header" style="background: {{ colors.warning }};">
+    <h1 style="margin: 0; font-size: {{ heading_size }};">⚠️ Quota Warning</h1>
+</div>
+
+<p style="font-size: {{ body_size }}; color: {{ colors.foreground }};">
+    You've used <strong>{{ "{:,}".format(current_usage) }}</strong> of your
+    <strong>{{ "{:,}".format(limit) }}</strong> monthly API calls.
+</p>
+
+<div class="progress-bar" style="background: {{ colors.border }}; height: 30px; border-radius: 15px; overflow: hidden; margin: 20px 0;">
+    <div class="progress-fill" style="background: {{ colors.warning }}; height: 100%; width: {{ percent }}%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: {{ body_size }};">
+        {{ "%.0f"|format(percent) }}%
+    </div>
+</div>
+
+<p style="font-size: {{ body_size }}; color: {{ colors.foreground }};">
+    You have <strong>{{ "{:,}".format(remaining) }} calls remaining</strong> this month.
+</p>
+
+<p style="margin: 30px 0;">
+    <a href="{{ app_url }}/profile/usage" class="btn btn-primary">
+        View Usage
+    </a>
+    <a href="{{ app_url }}/profile/billing" class="btn btn-success">
+        Upgrade Plan
+    </a>
+</p>
+{% endblock %}

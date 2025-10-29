@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header" style="background: {{ colors.success }};">
+    <h1 style="margin: 0; font-size: {{ heading_size }};">✅ Job Complete!</h1>
+</div>
+
+<div class="stats" style="background: {{ colors.stats_bg }}; padding: 20px; border-radius: 8px; margin: 20px 0;">
+    <h2 style="margin-top: 0; color: {{ colors.foreground }};">Results Summary</h2>
+    <div class="stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+        <div class="stat-item" style="text-align: center;">
+            <div class="stat-value" style="font-size: {{ stat_value_size }}; font-weight: bold; color: {{ colors.foreground }};">
+                {{ "{:,}".format(total_rows) }}
+            </div>
+            <div class="stat-label" style="color: {{ colors.muted }}; font-size: {{ small_size }};">Total Rows</div>
+        </div>
+        <div class="stat-item" style="text-align: center;">
+            <div class="stat-value" style="font-size: {{ stat_value_size }}; font-weight: bold; color: {{ colors.success }};">
+                {{ "{:,}".format(successful) }}
+            </div>
+            <div class="stat-label" style="color: {{ colors.muted }}; font-size: {{ small_size }};">Successful</div>
+        </div>
+        <div class="stat-item" style="text-align: center;">
+            <div class="stat-value" style="font-size: {{ stat_value_size }}; font-weight: bold; color: {{ colors.error }};">
+                {{ "{:,}".format(failed) }}
+            </div>
+            <div class="stat-label" style="color: {{ colors.muted }}; font-size: {{ small_size }};">Failed</div>
+        </div>
+        <div class="stat-item" style="text-align: center;">
+            <div class="stat-value" style="font-size: {{ stat_value_size }}; font-weight: bold; color: {{ colors.foreground }};">
+                {{ "%.1f"|format(processing_time_seconds) }}s
+            </div>
+            <div class="stat-label" style="color: {{ colors.muted }}; font-size: {{ small_size }};">Processing Time</div>
+        </div>
+    </div>
+</div>
+
+{% if download_section %}
+    {{ download_section|safe }}
+{% endif %}
+
+<p style="margin: 20px 0;">
+    <a href="{{ app_url }}/output?job={{ job_id }}" class="btn btn-primary">
+        View in App →
+    </a>
+</p>
+{% endblock %}

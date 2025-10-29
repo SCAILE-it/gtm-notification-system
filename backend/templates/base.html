@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: {{ font_family }};
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: {{ colors.background }};
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: {{ colors.card }};
+        }
+        .header {
+            padding: 30px 20px;
+            border-radius: 8px;
+            text-align: center;
+            color: white;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid {{ colors.border }};
+            color: {{ colors.muted }};
+            font-size: {{ small_size }};
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: {{ radius }};
+            color: white;
+            margin: 20px 10px 20px 0;
+        }
+        .btn-primary {
+            background: {{ colors.primary }};
+        }
+        .btn-success {
+            background: {{ colors.success }};
+        }
+        .btn-error {
+            background: {{ colors.error }};
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% block content %}{% endblock %}
+
+        <div class="footer">
+            <p>
+                Manage your notification preferences:
+                <a href="{{ app_url }}/profile/notifications" style="color: {{ colors.primary }};">Settings</a>
+            </p>
+            <p style="margin-top: 10px; font-size: 12px;">SCAILE - GTM Intelligence Copilot</p>
+        </div>
+    </div>
+</body>
+</html>

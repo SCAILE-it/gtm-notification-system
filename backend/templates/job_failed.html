@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="header" style="background: {{ colors.error }};">
+    <h1 style="margin: 0; font-size: {{ heading_size }};">❌ Job Failed</h1>
+</div>
+
+<div class="error-box" style="background: {{ colors.error_bg }}; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid {{ colors.error }};">
+    <h3 style="margin-top: 0; color: {{ colors.error_hover }};">Error Details:</h3>
+    <p><code style="background: {{ colors.stats_bg }}; padding: 2px 6px; border-radius: 4px;">{{ error_message }}</code></p>
+</div>
+
+<p style="color: {{ colors.foreground }};">
+    Your job encountered an error and could not complete. Please check the error details above and try again.
+</p>
+
+<p style="margin: 20px 0;">
+    <a href="{{ app_url }}/output?job={{ job_id }}" class="btn btn-error">
+        View Details →
+    </a>
+</p>
+
+<hr style="border: none; border-top: 1px solid {{ colors.border }}; margin: 30px 0;">
+<p style="color: {{ colors.muted }}; font-size: {{ small_size }};">
+    Need help? Reply to this email or visit our
+    <a href="{{ app_url }}/docs" style="color: {{ colors.primary }};">documentation</a>.
+</p>
+{% endblock %}
