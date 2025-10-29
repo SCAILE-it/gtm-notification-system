@@ -190,9 +190,9 @@ cp -r ../gtm-notification-system/supabase/functions/_shared \
 # Add secrets to Supabase
 npx supabase secrets set RESEND_API_KEY=re_xxxxx
 npx supabase secrets set RESEND_WEBHOOK_SECRET=whsec_xxxxx
-npx supabase secrets set FROM_EMAIL="GTM Power App <jobs@gtmpowerapp.com>"
-npx supabase secrets set APP_URL=https://app.gtmpowerapp.com
-npx supabase secrets set DOCS_URL=https://docs.gtmpowerapp.com
+npx supabase secrets set FROM_EMAIL="SCAILE <hello@g-gpt.com>"
+npx supabase secrets set APP_URL=https://g-gpt.com
+npx supabase secrets set DOCS_URL=https://docs.g-gpt.com
 ```
 
 ### 3.3 Deploy Edge Functions
@@ -235,7 +235,7 @@ curl -X POST https://[project].supabase.co/functions/v1/resend-webhook \
     "created_at": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'",
     "data": {
       "email_id": "test-email-123",
-      "from": "jobs@gtmpowerapp.com",
+      "from": "hello@g-gpt.com",
       "to": ["test@example.com"]
     }
   }'

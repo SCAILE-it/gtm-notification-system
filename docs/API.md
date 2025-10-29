@@ -25,8 +25,8 @@ NotificationSystem(
     resend_api_key: str,
     supabase_url: str,
     supabase_key: str,
-    from_email: str = "GTM Power App <jobs@gtmpowerapp.com>",
-    app_url: str = "https://app.gtmpowerapp.com",
+    from_email: str = "SCAILE <hello@g-gpt.com>",
+    app_url: str = "https://g-gpt.com",
     max_retries: int = 3,
     attachment_size_threshold_mb: int = 2
 )
@@ -39,8 +39,8 @@ NotificationSystem(
 | `resend_api_key` | `str` | ✅ | - | Resend API key |
 | `supabase_url` | `str` | ✅ | - | Supabase project URL |
 | `supabase_key` | `str` | ✅ | - | Supabase service role key |
-| `from_email` | `str` | ❌ | `GTM Power App <jobs@...>` | Sender email address |
-| `app_url` | `str` | ❌ | `https://app.gtmpowerapp.com` | Application URL for links |
+| `from_email` | `str` | ❌ | `SCAILE <hello@g-gpt.com>` | Sender email address |
+| `app_url` | `str` | ❌ | `https://g-gpt.com` | Application URL for links |
 | `max_retries` | `int` | ❌ | `3` | Number of retry attempts |
 | `attachment_size_threshold_mb` | `int` | ❌ | `2` | Max size (MB) for email attachments |
 
