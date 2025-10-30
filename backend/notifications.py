@@ -29,6 +29,7 @@ import resend
 from supabase import create_client, Client
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from rate_limiter import notification_rate_limiter, RateLimitExceeded
+from monitoring import add_breadcrumb, capture_exception, set_tag, set_user
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -297,6 +298,18 @@ class NotificationSystem:
         if attachments:
             email_data["attachments"] = attachments
 
+        # Add Sentry context
+        set_user(user_id, user_email)
+        set_tag("notification_type", notification_type.value)
+        if job_id:
+            set_tag("job_id", job_id)
+
+        add_breadcrumb(
+            f"Sending {notification_type.value} email",
+            category="email",
+            data={"user_id": user_id, "subject": subject}
+        )
+
         # Retry logic
         last_error = None
         for attempt in range(self.max_retries):
@@ -314,12 +327,31 @@ class NotificationSystem:
                     "job_id": job_id
                 }).execute()
 
+                add_breadcrumb(
+                    f"{notification_type.value} email sent successfully",
+                    category="email",
+                    level="info",
+                    data={"email_id": result['id']}
+                )
+
                 logger.info(f"Sent {notification_type} email to {user_email}, email_id={result['id']}")
                 return {"success": True, "email_id": result['id']}
 
             except Exception as e:
                 last_error = str(e)
                 logger.warning(f"Attempt {attempt + 1}/{self.max_retries} failed: {e}")
+
+                # Capture in Sentry on first failure
+                if attempt == 0:
+                    capture_exception(
+                        e,
+                        context={
+                            "notification_type": notification_type.value,
+                            "user_id": user_id,
+                            "attempt": attempt + 1
+                        },
+                        level="warning"
+                    )
 
                 if attempt < self.max_retries - 1:
                     # Exponential backoff: 5s, 10s, 15s
@@ -335,6 +367,18 @@ class NotificationSystem:
                         "job_id": job_id,
                         "resend_event_data": {"error": last_error}
                     }).execute()
+
+                    # Capture final failure in Sentry
+                    capture_exception(
+                        Exception(f"Email send failed after {self.max_retries} attempts: {last_error}"),
+                        context={
+                            "notification_type": notification_type.value,
+                            "user_id": user_id,
+                            "attempts": self.max_retries,
+                            "last_error": last_error
+                        },
+                        level="error"
+                    )
 
                     logger.error(f"Failed to send {notification_type} email after {self.max_retries} attempts: {last_error}")
                     return {"success": False, "error": last_error}
