@@ -1,6 +1,23 @@
 # SCAILE Notification System
 
+<div align="center">
+
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Python](https://img.shields.io/badge/python-3.12+-green)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Status](https://img.shields.io/badge/status-production--ready-brightgreen)
+
 **Standalone email notification system for SCAILE (GTM Intelligence Copilot)**
+
+[Quick Start](#-quick-start) •
+[Documentation](docs/) •
+[Roadmap](ROADMAP.md) •
+[Contributing](CONTRIBUTING.md) •
+[Changelog](CHANGELOG.md)
+
+</div>
+
+---
 
 ## 🎯 Purpose
 
@@ -206,6 +223,28 @@ Same as parent SCAILE project
 
 ---
 
-**Built for SCAILE** - GTM Intelligence Copilot
-**Status:** ✅ Ready for isolated development
-**Last Updated:** 2025-01-28
+---
+
+## 🌟 What's New in v1.0.0
+
+- ✅ **Jinja2 Templates** - Designer-friendly email templates
+- ✅ **Rate Limiting** - Prevent email spam (10/min per user)
+- ✅ **Sentry Integration** - Production error monitoring
+- ✅ **Comprehensive Docs** - ROADMAP, CHANGELOG, CONTRIBUTING
+- ✅ **GitHub Repository** - https://github.com/SCAILE-it/gtm-notification-system
+
+**Status:** ✅ Production Ready (v1.0.0)
+**Last Updated:** 2025-01-29
+
+---
+
+## 📚 Links
+
+- **Repository:** https://github.com/SCAILE-it/gtm-notification-system
+- **Issues:** https://github.com/SCAILE-it/gtm-notification-system/issues
+- **Discussions:** https://github.com/SCAILE-it/gtm-notification-system/discussions
+- **SCAILE:** https://g-gpt.com
+
+---
+
+**Built with ❤️ by the SCAILE Team**
